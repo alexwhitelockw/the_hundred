@@ -2,9 +2,9 @@
 
 # Libraries ---------------------------
 
+library(data.table)
 library(jsonlite)
 library(RSQLite)
-library(stringi)
 
 # Own Functions -----------------------
 
@@ -29,22 +29,37 @@ json_files <-
 
 # Match Information -------------------
 
-match_information <- 
+match_information_df <- 
   lapply(
     json_files, 
     match_information)
 
-match_information <-
+match_information_df <-
   do.call(
     rbind, 
-    match_information)
+    match_information_df)
 
 dbWriteTable(
   conn = db_con,
   name = "match_information",
-  value = match_information
+  value = match_information_df, 
+  overwrite = TRUE
 )
 
+# Match Player Information ------------
+
+match_player_information_df <- 
+  lapply(
+    json_files, 
+    match_player_information) |>
+  rbindlist()
+
+dbWriteTable(
+  conn = db_con,
+  name = "match_player_information",
+  value = match_player_information_df, 
+  overwrite = TRUE
+)
 
 # Disconnect from DB ------------------
 
