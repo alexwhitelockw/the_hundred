@@ -45,3 +45,7 @@ dbWriteTable(
   value = match_information
 )
 
+
+# Disconnect from DB ------------------
+
+dbDisconnect(db_con)
