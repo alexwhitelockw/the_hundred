@@ -55,7 +55,7 @@ match_information <- function(json_file) {
 
 # Player Match Information ------------
 # Clean-up team player information such as the team name,
-# player number, and player name
+# player number, and player name.
 
 match_player_information <- function(json_file) {
   
@@ -94,4 +94,110 @@ match_player_information <- function(json_file) {
   
   return(team_players)
   
+}
+
+# Run and Wicket Information
+# Extract information on the runs per over and the 
+# wickets per over
+
+extract_run_information <- function(over_list) {
+  over_number <-
+    over_list$over
+  
+  over_deliveries <-
+    over_list$deliveries
+  
+  run_information <- lapply(over_deliveries, function(df) {
+    run_df <- data.frame(
+      over_number = over_number,
+      batter_name = df$batter,
+      bowler_name = df$bowler,
+      non_striker_name = df$non_striker,
+      batter_runs = df$runs$batter,
+      extra_runs = df$runs$extras,
+      total_runs = df$runs$total
+    )
+  }) |>
+    rbindlist()
+  
+}
+
+extract_wicket_information <- function(over_list) {
+  over_number <-
+    over_list$over
+  
+  over_deliveries <-
+    over_list$deliveries
+  
+  wicket_information <- lapply(over_deliveries, function (df) {
+    if (exists("wickets", df)) {
+      wicket_player_out <-
+        df$wickets[[1]]$player_out
+      wicket_kind <-
+        df$wickets[[1]]$kind
+      wicket_df <-
+        data.frame(
+          over_number = over_number,
+          wicket_player_out = wicket_player_out,
+          wicket_kind = wicket_kind
+        )
+      return(wicket_df)
+    }
+    else {
+      wicket_df <-
+        data.frame(
+          over_number = over_number,
+          wicket_player_out = NA,
+          wicket_kind = NA
+        )
+      return(wicket_df)
+    }
+  }) |>
+    rbindlist()
+}
+
+innings_details <- function(json_file) {
+  
+  json_read <- 
+    read_json(json_file)
+  
+  unique_match_number <-
+    unique_match_number(json_file)
+  
+  innings_list <-
+    json_read$innings  # Innings information
+  
+  lapply(innings_list, function(df) {
+    
+    # Cricket Team Name
+    team_name <-
+      df$team
+    
+    # List of Over Details
+    over_details <-
+      df$overs
+    
+    # Extract Wicket Details
+    wicket_information <-
+      lapply(over_details, extract_wicket_information) |>
+      rbindlist()
+    wicket_information[, team_name := team_name]
+    wicket_information[, match_number := unique_match_number]
+    
+    # Extract Run Details
+    run_information <-
+      lapply(over_details, extract_run_information) |>
+      rbindlist()
+    run_information[, team_name := team_name]
+    run_information[, match_number := unique_match_number]
+    
+    run_wicket_information <-
+      list(
+        wicket = wicket_information,
+        run = run_information
+      )
+    
+    return(run_wicket_information)
+    
+  })
 }
