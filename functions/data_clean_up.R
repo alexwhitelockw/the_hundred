@@ -2,6 +2,8 @@
 
 # Libraries ---------------------------
 
+library(data.table)
+library(jsonlite)
 library(stringi)
 
 # Unique Match Number -----------------
